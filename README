@@ -19,3 +19,13 @@ There are two main features offered by this script :
 2. Add a folder to process: 
         autoloadManager::addFolder('{YOUR_FOLDER_PATH}');
 
+
+Authors 
+=======
+Al-Fallouji Bashar, 
+    - bashar@alfallouji.com
+
+Charron Pierrick
+    - pierrick@webstart.fr
+
+
