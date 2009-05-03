@@ -1,0 +1,21 @@
+                         AutoLoad Manager
+                         ================
+
+Cms AutoLoad Manager is a generic autoloader that can be used with any
+framework or library.
+
+Using the PHP tokenizer mechanism, it will parse folder(s) and discover
+the different classes and interfaces defined.
+
+The big advantage of using this autoloadManager is that it will allow
+you to implement whatever naming rules you want and may have mutliple
+classes in one file (if you want to have a such feature).
+
+There are two main features offered by this script : 
+
+1. Register the loadClass function:
+        spl_autoload_register('autoloadManager::loadClass');
+
+2. Add a folder to process: 
+        autoloadManager::addFolder('{YOUR_FOLDER_PATH}');
+
