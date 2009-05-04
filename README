@@ -4,13 +4,24 @@
                         _______________________
                          
 
-Authors 
-=======
+AUTHORS & CONTACT
+=================
+
 Al-Fallouji Bashar 
     - bashar@alfallouji.com
 
 Charron Pierrick
     - pierrick@webstart.fr
+
+    
+DOCUMENTATION & DOWNLOAD
+========================
+
+Latest version is available on github at :
+    - http://github.com/alfallouji/PHP-Autoload-Manager/
+
+Documentation can be found on : 
+    - http://bashar.alfallouji.com/PHP-Autoload-Manager/
 
 
 LICENSE
@@ -64,14 +75,6 @@ the autoloadManager will look on that hash table and load the file if it exists.
 A fallback mechanism can be used also in a development environment that will 
 try to rescan all the folders once more (this mechanism is usefull when 
 you are often adding new classes to your program).
-
-
-Where can I download it ?
-=========================
-
-Latest version is available on github at :
-
-http://github.com/alfallouji/PHP-Autoload-Manager-/
 
 
 How can I use it ?
