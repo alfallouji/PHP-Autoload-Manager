@@ -86,7 +86,7 @@ Secondly, you will have to define the path where the autoloadManager will
 store the file containing the serialized hash table.
 
     // Defines the path where the file containing the autoload
-    // array will be stored
+    // array will be stored.
     // Apache User must have Write Access to this folder !
     DEFINE('AUTOLOAD_SAVE_PATH', sys_get_temp_dir()); 
 
@@ -109,6 +109,4 @@ For instance, if your classes are found in ‘/var/www/myProject/lib’ and
     cmsAutoloadManager::addFolder('/var/www/myProject/lib');
     cmsAutoloadManager::addFolder('/var/www/myProject/includes');
     spl_autoload_register('cmsAutoloadManager::loadClass'); 
-
-
 
