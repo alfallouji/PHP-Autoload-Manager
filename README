@@ -98,18 +98,18 @@ Then, you have the two main features offered by this script.
 
 1. Register the loadClass function:
 
-    spl_autoload_register('cmsAutoloadManager::loadClass'); 
+    spl_autoload_register('autoloadManager::loadClass'); 
 
 
 2. Add a folder to process:
 
-    cmsAutoloadManager::addFolder('{YOUR_FOLDER_PATH}');
+    autoloadManager::addFolder('{YOUR_FOLDER_PATH}');
 
 
 For instance, if your classes are found in ‘/var/www/myProject/lib’ and 
 ‘/var/www/myProject/includes’, then you can do something like this.
 
-    cmsAutoloadManager::addFolder('/var/www/myProject/lib');
-    cmsAutoloadManager::addFolder('/var/www/myProject/includes');
-    spl_autoload_register('cmsAutoloadManager::loadClass'); 
+    autoloadManager::addFolder('/var/www/myProject/lib');
+    autoloadManager::addFolder('/var/www/myProject/includes');
+    spl_autoload_register('autoloadManager::loadClass'); 
 
