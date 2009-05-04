@@ -28,6 +28,8 @@
  * 
  * Register the loadClass function: spl_autoload_register('autoloadManager::loadClass');
  * Add a folder to process: autoloadManager::addFolder('{YOUR_FOLDER_PATH}');
+ * 
+ * Read documentation for more information.
  */
 class autoloadManager
 {    
@@ -87,7 +89,6 @@ class autoloadManager
         return;
     }
     
-    
     /** 
      * Parse every registred folders, regenerate autoload files and update the $_classes     
      */
@@ -116,7 +117,7 @@ class autoloadManager
             if (!$file->isFile() || '.php' !== substr($file->getFilename(), -4))
               continue;
 
-            if($classNames = self::getClassFromFile($file->getPathname()))
+            if($classNames = self::getClassesFromFile($file->getPathname()))
             {
                 foreach($classNames as $className)
                 {
@@ -133,9 +134,9 @@ class autoloadManager
      * Extract the classname contained inside the php file
      *
      * @param String $file Filename to process
-     * @return String Classname found in the file
+     * @return Array Array of classname(s) and interface(s) found in the file
      */
-    private static function getClassFromFile($file)
+    private static function getClassesFromFile($file)
     {
         $classes = array();
         $tokens = token_get_all(file_get_contents($file));
@@ -153,12 +154,12 @@ class autoloadManager
             }
         }
         
-        
         return $classes;
     }
     
     /**
-     * Generate an __autoload.php file containing an array named $_autoloadArray
+     * Generate a file containing an array named $_autoloadArray.
+     * File is generated under the AUTOLOAD_SAVE_PATH folder.
      * 
      * @param Array $classes Contains all the classes found and the corresponding filename (e.g. {$className} => {fileName})
      * @param String $folder Folder to process
