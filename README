@@ -46,7 +46,7 @@ See the GNU Lesser General Public License for more details.
 DESCRIPTION
 ===========
 
-Cms AutoLoad Manager is a generic autoloader that can be used with any
+AutoLoad Manager is a generic autoloader that can be used with any
 framework or library.
 
 Using the PHP tokenizer mechanism, it will parse folder(s) and discover
