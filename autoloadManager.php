@@ -40,6 +40,12 @@ class autoloadManager
     private static $_folders = array();
 
     /**
+     * Contains all the excluded folders
+     * @var Array
+     */
+    private static $_excludedFolders = array();
+
+    /**
      * Contains all the classes and their matching filename 
      * @param Array  
      */    
@@ -62,6 +68,16 @@ class autoloadManager
             
             self::$_classes = array_merge(self::$_classes, $_autoloadManagerArray);
         }
+    }
+
+    /**
+     * Exclude a folder from the parsing
+     *
+     * @param String $path Folder to exclude
+     */
+    public static function excludeFolder($path)
+    {
+        self::$_excludedFolders[] = $path;
     }
 
     /**
@@ -115,6 +131,15 @@ class autoloadManager
         {
             if (!$file->isFile() || '.php' !== substr($file->getFilename(), -4))
               continue;
+            
+            $len = strlen($folder);
+            foreach(self::$_excludedFolders as $folder)
+            {
+                if(0 === strncmp($folder, $file->getPathname(), $len))
+                {
+                    continue 2;
+                }
+            }
 
             if($classNames = self::getClassesFromFile($file->getPathname()))
             {
