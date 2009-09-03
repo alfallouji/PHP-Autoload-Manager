@@ -58,9 +58,8 @@ class autoloadManager
                 
         if(file_exists($autoloadFile))
         {       
-            require_once($autoloadFile);  
+            $_autoloadManagerArray = require_once($autoloadFile);  
             
-            // Note: the name of the array in the generated file is $_autoloadManagerArray
             self::$_classes = array_merge(self::$_classes, $_autoloadManagerArray);
         }
     }
@@ -158,7 +157,7 @@ class autoloadManager
     }
     
     /**
-     * Generate a file containing an array named $_autoloadArray.
+     * Generate a file containing an array.
      * File is generated under the AUTOLOAD_SAVE_PATH folder.
      * 
      * @param Array $classes Contains all the classes found and the corresponding filename (e.g. {$className} => {fileName})
@@ -171,14 +170,14 @@ class autoloadManager
         $content .= '/** ' . PHP_EOL;
         $content .= ' * AutoloadManager Script' . PHP_EOL;
         $content .= ' * ' . PHP_EOL;
-        $content .= ' * @author      Al-Fallouji Bashar & Charron Pierrick' . PHP_EOL;
+        $content .= ' * @authors      Al-Fallouji Bashar & Charron Pierrick' . PHP_EOL;
         $content .= ' * ' . PHP_EOL;
         $content .= ' * @description This file was automatically generated at ' . date("Y-m-d [H:i:s]") . PHP_EOL;
         $content .= ' * ' . PHP_EOL;
         $content .= ' */ ' . PHP_EOL;    
         
-        // Export array ($_autoloadArray)
-        $content .= '$_autoloadManagerArray = ' . var_export($classes, true) . ';';
+        // Export array
+        $content .= 'return ' . var_export($classes, true) . ';';
                 
         file_put_contents(AUTOLOAD_SAVE_PATH . DIRECTORY_SEPARATOR  . md5($folder) . '.php', $content);       
     }    
