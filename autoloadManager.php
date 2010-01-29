@@ -55,13 +55,13 @@ class autoloadManager
      * Scan files matching this regex
      * @var String
      */
-    private static $_filesRegex = "/\.(inc|php)$/";
+    private static $_filesRegex = '/\.(inc|php)$/';
 
     /**
-     * Save path
+     * Save path (Default is current dir)
      * @var String
      */
-    private static $_savePath = null;
+    private static $_savePath = '.';
 
     /**
      * Get the path where autoload files are saved
@@ -70,7 +70,7 @@ class autoloadManager
      */
     public static function getSavePath()
     {
-        return self::$_savePath ? self::$_savePath : sys_get_temp_dir();
+        return self::$_savePath;
     }
 
     /**
