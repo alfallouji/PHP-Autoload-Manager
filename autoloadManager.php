@@ -137,6 +137,17 @@ class autoloadManager
     }
 
     /**
+     * Checks if the class has been defined  
+     *
+     * @param String $className Name of the class
+     * @return Boolean true if class exists, false otherwise.
+     */
+    public static function classExists($className)
+    {
+        return array_key_exists($className, self::$_classes);
+    }
+
+    /**
      * Method used by the spl_autoload_register
      *
      * @param String $className Name of the class
