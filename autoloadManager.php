@@ -25,6 +25,7 @@ if (version_compare(PHP_VERSION, '5.3.0', '<'))
     define('T_NAMESPACE', 377);
     define('T_NS_SEPARATOR', 380);
 }
+
 /**
  * autoloadManager class
  *
@@ -104,13 +105,13 @@ class autoloadManager
      */
     public static function addFolder($path)
     {
-        if($realpath = realpath($path) and is_dir($realpath))
+        if ($realpath = realpath($path) and is_dir($realpath))
         {
             self::$_folders[] = $realpath;
 
             $autoloadFile = self::getSavePath() . DIRECTORY_SEPARATOR  . md5($realpath) . '.php';
 
-            if(file_exists($autoloadFile))
+            if (file_exists($autoloadFile))
             {
                 $_autoloadManagerArray = require_once($autoloadFile);
     
@@ -130,7 +131,7 @@ class autoloadManager
      */
     public static function excludeFolder($path)
     {
-        if($realpath = realpath($path) and is_dir($realpath))
+        if ($realpath = realpath($path) and is_dir($realpath))
         {
             self::$_excludedFolders[] = $realpath . DIRECTORY_SEPARATOR;
         } 
@@ -159,11 +160,11 @@ class autoloadManager
      */
     public static function loadClass($className, $regenerate = true)
     {
-        if(array_key_exists($className, self::$_classes) && file_exists(self::$_classes[$className]))
+        if (array_key_exists($className, self::$_classes) && file_exists(self::$_classes[$className]))
         {
             require_once(self::$_classes[$className]);
         } 
-        elseif(true === $regenerate)
+        elseif (true === $regenerate)
         {
             self::parseFolders();
             self::loadClass($className, false);
@@ -175,7 +176,7 @@ class autoloadManager
      */
     private static function parseFolders()
     {
-        foreach(self::$_folders as $folder)
+        foreach (self::$_folders as $folder)
         {
             $classes = self::parseFolder($folder);
             self::saveToFile($classes, $folder);
@@ -195,20 +196,20 @@ class autoloadManager
 
         foreach ($files as $file)
         {
-            if($file->isFile() && preg_match(self::$_filesRegex, $file->getFilename()))
+            if ($file->isFile() && preg_match(self::$_filesRegex, $file->getFilename()))
             {
                 $len = strlen($folder);
-                foreach(self::$_excludedFolders as $folder)
+                foreach (self::$_excludedFolders as $folder)
                 {
-                    if(0 === strncmp($folder, $file->getPathname(), $len))
+                    if (0 === strncmp($folder, $file->getPathname(), $len))
                     {
                         continue 2;
                     }
                 }
 
-                if($classNames = self::getClassesFromFile($file->getPathname()))
+                if ($classNames = self::getClassesFromFile($file->getPathname()))
                 {
-                    foreach($classNames as $className)
+                    foreach ($classNames as $className)
                     {
                         // Adding class to map
                         $classes[$className] = $file->getPathname();
@@ -233,9 +234,9 @@ class autoloadManager
         $tokens = token_get_all(file_get_contents($file));
         $nbtokens = count($tokens);
 
-        for($i = 0 ; $i < $nbtokens ; $i++)
+        for ($i = 0 ; $i < $nbtokens ; $i++)
         {
-            switch($tokens[$i][0])
+            switch ($tokens[$i][0])
             {
                 case T_NAMESPACE:
                     $i+=2;
@@ -250,7 +251,9 @@ class autoloadManager
                     if ($namespace)
                     {
                         $classes[] = $namespace . '\\' . $tokens[$i][1];
-                    } else {
+                    } 
+                    else 
+                    {
                         $classes[] = $tokens[$i][1];
                     }
                     break;
@@ -276,7 +279,7 @@ class autoloadManager
                        $content .= ' * ' . PHP_EOL;
                        $content .= ' * @authors      Al-Fallouji Bashar & Charron Pierrick' . PHP_EOL;
                        $content .= ' * ' . PHP_EOL;
-                       $content .= ' * @description This file was automatically generated at ' . date("Y-m-d [H:i:s]") . PHP_EOL;
+                       $content .= ' * @description This file was automatically generated at ' . date('Y-m-d [H:i:s]') . PHP_EOL;
                        $content .= ' * ' . PHP_EOL;
                        $content .= ' */ ' . PHP_EOL;
 
