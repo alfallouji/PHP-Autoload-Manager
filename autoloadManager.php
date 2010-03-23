@@ -113,7 +113,7 @@ class autoloadManager
 
             if (file_exists($autoloadFile))
             {
-                $_autoloadManagerArray = require_once($autoloadFile);
+                $_autoloadManagerArray = require($autoloadFile);
     
                 self::$_classes = array_merge(self::$_classes, $_autoloadManagerArray);
             }
@@ -162,7 +162,7 @@ class autoloadManager
     {
         if (array_key_exists($className, self::$_classes) && file_exists(self::$_classes[$className]))
         {
-            require_once(self::$_classes[$className]);
+            require(self::$_classes[$className]);
         } 
         elseif (true === $regenerate)
         {
