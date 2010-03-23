@@ -20,7 +20,11 @@
  * @author      Al-Fallouji Bashar & Charron Pierrick
  * @version     1.2
  */
-
+if (version_compare(PHP_VERSION, '5.3.0', '<'))
+{
+    define('T_NAMESPACE', 377);
+    define('T_NS_SEPARATOR', 380);
+}
 /**
  * autoloadManager class
  *
@@ -224,6 +228,7 @@ class autoloadManager
      */
     private static function getClassesFromFile($file)
     {
+        $namespace = null;
         $classes = array();
         $tokens = token_get_all(file_get_contents($file));
         $nbtokens = count($tokens);
@@ -232,10 +237,22 @@ class autoloadManager
         {
             switch($tokens[$i][0])
             {
+                case T_NAMESPACE:
+                    $i+=2;
+                    while ($tokens[$i][0] === T_STRING || $tokens[$i][0] === T_NS_SEPARATOR)
+                    {
+                        $namespace .= $tokens[$i++][1];
+                    }
+                    break;
                 case T_INTERFACE:
                 case T_CLASS:
                     $i+=2;
-                    $classes[] = $tokens[$i][1];
+                    if ($namespace)
+                    {
+                        $classes[] = $namespace . '\\' . $tokens[$i][1];
+                    } else {
+                        $classes[] = $tokens[$i][1];
+                    }
                     break;
             }
         }
