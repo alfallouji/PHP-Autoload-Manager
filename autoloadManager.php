@@ -275,13 +275,13 @@ class autoloadManager
         // Write header and comment
         $content  = '<?php ' . PHP_EOL;
         $content .= '/** ' . PHP_EOL;
-                       $content .= ' * AutoloadManager Script' . PHP_EOL;
-                       $content .= ' * ' . PHP_EOL;
-                       $content .= ' * @authors      Al-Fallouji Bashar & Charron Pierrick' . PHP_EOL;
-                       $content .= ' * ' . PHP_EOL;
-                       $content .= ' * @description This file was automatically generated at ' . date('Y-m-d [H:i:s]') . PHP_EOL;
-                       $content .= ' * ' . PHP_EOL;
-                       $content .= ' */ ' . PHP_EOL;
+        $content .= ' * AutoloadManager Script' . PHP_EOL;
+        $content .= ' * ' . PHP_EOL;
+        $content .= ' * @authors      Al-Fallouji Bashar & Charron Pierrick' . PHP_EOL;
+        $content .= ' * ' . PHP_EOL;
+        $content .= ' * @description This file was automatically generated at ' . date('Y-m-d [H:i:s]') . PHP_EOL;
+        $content .= ' * ' . PHP_EOL;
+        $content .= ' */ ' . PHP_EOL;
 
         // Export array
         $content .= 'return ' . var_export($classes, true) . ';';
