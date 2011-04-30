@@ -85,43 +85,39 @@ First, you will have simply to load the autoloadManager class into your script.
     include('api/autoloadManager.php'); 
 
 
-Secondly, you will have to define the path where the autoloadManager will 
-store the file containing the serialized hash table.
+Secondly, you will have to instanciate your autoloadManager and define
+the path where the autoloadManager will store the file containing the
+hash table.
 
-    // Defines the path where the file containing the autoload
-    // array will be stored.
-    // Apache User must have Write Access to this folder !
-    autoloadManager::setSavePath(sys_get_temp_dir());
-
+	$autoloadManager = new AutoloadManager();
+	$autoloadManager->setSaveFile('./autoload.php');
 
 Then, you have the four main features offered by this script.
 
 1. Register the loadClass function:
 
-    spl_autoload_register('autoloadManager::loadClass'); 
-
+    $autoloadManager->register();
 
 2. Add a folder to process:
 
-    autoloadManager::addFolder('{YOUR_FOLDER_PATH}');
+    $autoloadManager->addFolder('{YOUR_FOLDER_PATH}');
 
 
 For instance, if your classes are found in ‘/var/www/myProject/lib’ and 
 ‘/var/www/myProject/includes’, then you can do something like this.
 
-    autoloadManager::addFolder('/var/www/myProject/lib');
-    autoloadManager::addFolder('/var/www/myProject/includes');
-    spl_autoload_register('autoloadManager::loadClass'); 
-
+    $autoloadManager->addFolder('/var/www/myProject/lib');
+    $autoloadManager->addFolder('/var/www/myProject/includes');
+    $autoloadManager->register();
 
 3. Add or remove file extensions to scan:
 
 By default the autoloadManager will parse all .php and .inc files. You can
 modify this behavior by using the setFileRegex method as bellow
 
-    autoloadManager::setFileRegex('/\.php$/');
+    $autoloadManager->setFileRegex('/\.php$/');
 
 
 4. Exclude a folder from the process list:
 
-    autoloadManager::excludeFolder('/var/www/myProject/includes/lib1');
+    $autoloadManager->excludeFolder('/var/www/myProject/includes/lib1');
