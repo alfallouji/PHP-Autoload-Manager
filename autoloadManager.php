@@ -18,7 +18,7 @@
  * File:        autoloadManager.php
  *
  * @author      Al-Fallouji Bashar & Charron Pierrick
- * @version     1.2
+ * @version     2.0
  */
 if (version_compare(PHP_VERSION, '5.3.0', '<'))
 {
@@ -31,51 +31,65 @@ if (version_compare(PHP_VERSION, '5.3.0', '<'))
  *
  * Handles the class autoload feature
  *
- * Register the loadClass function: spl_autoload_register('autoloadManager::loadClass');
- * Add a folder to process: autoloadManager::addFolder('{YOUR_FOLDER_PATH}');
+ * Register the loadClass function: $autoloader->register();
+ * Add a folder to process: $autoloader->addFolder('{YOUR_FOLDER_PATH}');
  *
  * Read documentation for more information.
  */
 class autoloadManager
 {
     /**
+     * Constants used by the checkClass method
+     * @var Integer
+     */
+    const CLASS_NOT_FOUND = 0;
+    const CLASS_EXISTS    = 1;
+    const CLASS_IS_NULL   = 2;
+
+    /**
      * Folders that should be parsed
      * @var Array
      */
-    private static $_folders = array();
+    private $_folders = array();
 
     /**
      * Excluded folders
      * @var Array
      */
-    private static $_excludedFolders = array();
+    private $_excludedFolders = array();
 
     /**
      * Classes and their matching filename
      * @var Array
      */
-    private static $_classes = array();
+    private $_classes = array();
 
     /**
      * Scan files matching this regex
      * @var String
      */
-    private static $_filesRegex = '/\.(inc|php)$/';
+    private $_filesRegex = '/\.(inc|php)$/';
 
     /**
-     * Save path (Default is current dir)
+     * Save path (Default is null)
      * @var String
      */
-    private static $_savePath = '.';
+    private $_saveFile = null;
+
+    /**
+     * Regenerate the autoload file or not. (default: not)
+     * @var bool Defaults to false. 
+     */
+    private $_regenerate = false;
 
     /**
      * Get the path where autoload files are saved
      * 
      * @return String path where autoload files will be saved
      */
-    public static function getSavePath()
+    public function getSaveFile()
     {
-        return self::$_savePath;
+        return $this->_saveFile;
     }
 
     /**
@@ -83,9 +97,13 @@ class autoloadManager
      *
      * @param String $path path where autoload files will be saved
      */
-    public static function setSavePath($path)
+    public function setSaveFile($pathToFile)
     {
-        self::$_savePath = realpath($path);
+        $this->_saveFile = $pathToFile;
+        if ($this->_saveFile && file_exists($this->_saveFile))
+        {
+            $this->_classes = include($this->_saveFile);
+        } 
     }
 
     /**
@@ -93,30 +111,21 @@ class autoloadManager
      *
      * @param String
      */
-    public static function setFileRegex($regex)
+    public function setFileRegex($regex)
     {
-        self::$_filesRegex = $regex;
+        $this->_filesRegex = $regex;
     }
-     
+
     /**
      * Add a new folder to parse
      *
      * @param String $path Root path to process
      */
-    public static function addFolder($path)
+    public function addFolder($path)
     {
         if ($realpath = realpath($path) and is_dir($realpath))
         {
-            self::$_folders[] = $realpath;
-
-            $autoloadFile = self::getSavePath() . DIRECTORY_SEPARATOR  . md5($realpath) . '.php';
-
-            if (file_exists($autoloadFile))
-            {
-                $_autoloadManagerArray = require($autoloadFile);
-    
-                self::$_classes = array_merge(self::$_classes, $_autoloadManagerArray);
-            }
+            $this->_folders[] = $realpath;
         } 
         else
         {
@@ -129,11 +138,11 @@ class autoloadManager
      *
      * @param String $path Folder to exclude
      */
-    public static function excludeFolder($path)
+    public function excludeFolder($path)
     {
         if ($realpath = realpath($path) and is_dir($realpath))
         {
-            self::$_excludedFolders[] = $realpath . DIRECTORY_SEPARATOR;
+            $this->_excludedFolders[] = $realpath . DIRECTORY_SEPARATOR;
         } 
         else 
         {
@@ -147,9 +156,30 @@ class autoloadManager
      * @param String $className Name of the class
      * @return Boolean true if class exists, false otherwise.
      */
-    public static function classExists($className)
+    public function classExists($className)
     {
-        return array_key_exists($className, self::$_classes);
+        return self::CLASS_EXISTS === $this->checkClass($className, $this->_classes);
+    }
+
+    /**
+     * Set the regeneration of the cached autoload files.
+     * 
+     * @param  bool $flag Ture or False to regenerate the cached autoload file.
+     * @return void
+     */
+    public function setRegenerate($flag)
+    {
+        $this->_regenerate = $flag;
+    }
+
+    /**
+     * Get the regeneration of the cached autoload files.
+     *
+     * @return bool
+     */
+    public function getRegenerate()
+    {
+        return $this->_regenerate;
     }
 
     /**
@@ -158,29 +188,75 @@ class autoloadManager
      * @param String $className Name of the class
      * @param Boolean $regenerate Indicates if the files should be regenerated
      */
-    public static function loadClass($className, $regenerate = true)
+    public function loadClass($className)
     {
-        if (array_key_exists($className, self::$_classes) && file_exists(self::$_classes[$className]))
+        // check if the class already exists in the cache file
+        $loaded = $this->checkClass($className, $this->_classes);
+        if (true === $this->_regenerate || !$loaded)
         {
-            require(self::$_classes[$className]);
-        } 
-        elseif (true === $regenerate)
-        {
-            self::parseFolders();
-            self::loadClass($className, false);
+            // parse the folders returns the list of all the classes
+            // in the application
+            $this->refresh();
+
+            // recheck if the class exists again in the reloaded classes
+            $loaded = $this->checkClass($className, $this->_classes);
+            if (!$loaded)
+            {
+                // set it to null to flag that it was not found
+                // This behaviour fixes the problem with infinite
+                // loop if we have a class_exists() for an inexistant
+                // class. 
+                $this->_classes[$className] = null;
+            }
+            // write to a single file
+            if ($this->getSaveFile())
+            {
+                $this->saveToFile($this->_classes);
+            }
         }
     }
 
     /**
+     * checks if a className exists in the class array
+     * 
+     * @param  mixed  $className    the classname to check
+     * @param  array  $classes      an array of classes
+     * @return int    errorCode     1 if the class exists
+     *                              2 if the class exists and is null
+     *                              (there have been an attempt done)
+     *                              0 if the class does not exist
+     */
+    private function checkClass($className, array $classes)
+    {
+        if (array_key_exists($className, $classes))
+        {
+            $classPath = $classes[$className];
+            // return true if the 
+            if (null === $classPath)
+            {
+                return self::CLASS_IS_NULL;
+            }    
+            elseif (file_exists($classPath))
+            {
+                require($classes[$className]);
+                return self::CLASS_EXISTS;
+            }
+        }    
+        return self::CLASS_NOT_FOUND;
+    }    
+
+
+    /**
      * Parse every registred folders, regenerate autoload files and update the $_classes
      */
-    private static function parseFolders()
+    private function parseFolders()
     {
-        foreach (self::$_folders as $folder)
+        $classesArray = array();
+        foreach ($this->_folders as $folder)
         {
-            $classes = self::parseFolder($folder);
-            self::saveToFile($classes, $folder);
+            $classesArray = array_merge($classesArray, $this->parseFolder($folder));
         }
+        return $classesArray;
     }
 
     /**
@@ -189,17 +265,17 @@ class autoloadManager
      * @param String $folder Folder to process
      * @return Array Array containing all the classes found
      */
-    private static function parseFolder($folder)
+    private function parseFolder($folder)
     {
         $classes = array();
         $files = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($folder));
 
         foreach ($files as $file)
         {
-            if ($file->isFile() && preg_match(self::$_filesRegex, $file->getFilename()))
+            if ($file->isFile() && preg_match($this->_filesRegex, $file->getFilename()))
             {
                 $len = strlen($folder);
-                foreach (self::$_excludedFolders as $folder)
+                foreach ($this->_excludedFolders as $folder)
                 {
                     if (0 === strncmp($folder, $file->getPathname(), $len))
                     {
@@ -207,13 +283,12 @@ class autoloadManager
                     }
                 }
 
-                if ($classNames = self::getClassesFromFile($file->getPathname()))
+                if ($classNames = $this->getClassesFromFile($file->getPathname()))
                 {
                     foreach ($classNames as $className)
                     {
                         // Adding class to map
                         $classes[$className] = $file->getPathname();
-                        self::$_classes[$className] = $classes[$className];
                     }
                 }
             }
@@ -227,7 +302,7 @@ class autoloadManager
      * @param String $file Filename to process
      * @return Array Array of classname(s) and interface(s) found in the file
      */
-    private static function getClassesFromFile($file)
+    private function getClassesFromFile($file)
     {
         $namespace = null;
         $classes = array();
@@ -270,7 +345,7 @@ class autoloadManager
      * @param Array $classes Contains all the classes found and the corresponding filename (e.g. {$className} => {fileName})
      * @param String $folder Folder to process
      */
-    private static function saveToFile(array $classes, $folder)
+    private function saveToFile(array $classes)
     {
         // Write header and comment
         $content  = '<?php ' . PHP_EOL;
@@ -285,7 +360,67 @@ class autoloadManager
 
         // Export array
         $content .= 'return ' . var_export($classes, true) . ';';
+        file_put_contents($this->getSaveFile(), $content);
+    }
 
-        file_put_contents(self::getSavePath() . DIRECTORY_SEPARATOR  . md5($folder) . '.php', $content);
+    /**
+     * Returns previously registered classes
+     * 
+     * @return array the list of registered classes
+     */
+    public function getRegisteredClasses()
+    {
+        return $this->_classes;
+    }    
+
+    /**
+     * Refreshes an already generated cache file
+     * This solves problems with previously unexistant classes that
+     * have been made available after.
+     * The optimize functionnality will look at all null values of 
+     * the available classes and does a new parse. if it founds that 
+     * there are classes that has been made available, it will update
+     * the file.
+     * 
+     * @return bool true if there has been a change to the array, false otherwise
+     */
+    public function refresh()
+    {
+        $existantClasses = $this->_classes;
+        $nullClasses = array_filter($existantClasses, array('self','_getNullElements'));
+        $newClasses = $this->parseFolders();
+
+        // $newClasses will override $nullClasses if the same key exists
+        // this allows new added classes (that were flagged as null) to be 
+        // added
+        $this->_classes = array_merge($nullClasses, $newClasses);
+        return true;
+    }
+    /**
+     * returns null elements (used in an array filter)
+     *
+     * @param mixed $element the element to check
+     *
+     * @return boolean true if element is null, false otherwise
+     */
+    private function _getNullElements($element)
+    { 
+        return null === $element; 
+    }
+
+    /**
+     * Registers this autoloadManager on the SPL autoload stack.
+     */
+    public function register()
+    {
+        spl_autoload_register(array($this, 'loadClass'));
+    }
+
+    /**
+     * Removes this autoloadManager from the SPL autoload stack.
+     */
+    public function unregister()
+    {
+        spl_autoload_unregister(array($this, 'loadClass'));
     }
 }
