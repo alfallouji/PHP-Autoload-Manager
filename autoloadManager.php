@@ -396,11 +396,25 @@ class autoloadManager
         $this->_classes = array_merge($nullClasses, $newClasses);
         return true;
     }
+
+    /**
+     * Generate the autoload file
+     * 
+     * @return void
+     */
+    public function generate()
+    {
+        if ($this->getSaveFile())
+        {
+            $this->refresh();
+            $this->saveToFile($this->_classes);
+        }
+    }
+
     /**
      * returns null elements (used in an array filter)
      *
      * @param mixed $element the element to check
-     *
      * @return boolean true if element is null, false otherwise
      */
     private function _getNullElements($element)
