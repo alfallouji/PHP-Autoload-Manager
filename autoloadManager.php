@@ -20,10 +20,21 @@
  * @author      Al-Fallouji Bashar & Charron Pierrick
  * @version     2.0
  */
-if (version_compare(PHP_VERSION, '5.3.0', '<'))
+
+
+if (!defined('T_NAMESPACE'))
 {
-    define('T_NAMESPACE', 377);
-    define('T_NS_SEPARATOR', 380);
+    /**
+     * This is just for backword compatibilty with previous versions
+     * Token -1 will never exists but we just want to avoid having undefined 
+     * constant
+     */
+    define('T_NAMESPACE', -1);
+    define('T_NS_SEPARATOR', -1);
+    if (!defined('T_TRAIT'))
+    {
+        define('T_TRAIT', -1);
+    }
 }
 
 /**
@@ -322,6 +333,7 @@ class autoloadManager
                     break;
                 case T_INTERFACE:
                 case T_CLASS:
+                case T_TRAIT:
                     $i+=2;
                     if ($namespace)
                     {
