@@ -31,10 +31,10 @@ if (!defined('T_NAMESPACE'))
      */
     define('T_NAMESPACE', -1);
     define('T_NS_SEPARATOR', -1);
-    if (!defined('T_TRAIT'))
-    {
-        define('T_TRAIT', -1);
-    }
+}
+if (!defined('T_TRAIT'))
+{
+    define('T_TRAIT', -1);
 }
 
 /**
@@ -285,9 +285,9 @@ class autoloadManager
         {
             if ($file->isFile() && preg_match($this->_filesRegex, $file->getFilename()))
             {
-                $len = strlen($folder);
                 foreach ($this->_excludedFolders as $folder)
                 {
+                    $len = strlen($folder);
                     if (0 === strncmp($folder, $file->getPathname(), $len))
                     {
                         continue 2;
