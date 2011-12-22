@@ -1,10 +1,10 @@
 --TEST--
-autoloadManager - Test cache REGEN_ONCE
+autoloadManager - Test cache SCAN_ONCE
 --FILE--
 <?php
 require __DIR__ . '/../autoloadManager.php';
 
-$autoloadManager = new autoloadManager(__DIR__ . '/cache.php', autoloadManager::REGEN_ONCE);
+$autoloadManager = new autoloadManager(__DIR__ . '/cache.php', autoloadManager::SCAN_ONCE);
 $autoloadManager->addFolder(__DIR__ . '/src');
 $autoloadManager->register();
 

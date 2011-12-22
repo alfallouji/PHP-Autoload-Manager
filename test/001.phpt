@@ -1,10 +1,10 @@
 --TEST--
-autoloadManager - Test no-cache REGEN_ONCE
+autoloadManager - Test no-cache SCAN_ONCE
 --FILE--
 <?php
 require __DIR__ . '/../autoloadManager.php';
 
-$autoloadManager = new autoloadManager(null, autoloadManager::REGEN_ONCE);
+$autoloadManager = new autoloadManager(null, autoloadManager::SCAN_ONCE);
 $autoloadManager->addFolder(__DIR__ . '/src/');
 $autoloadManager->register();
 

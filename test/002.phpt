@@ -1,10 +1,10 @@
 --TEST--
-autoloadManager - Test cache REGEN_NEVER
+autoloadManager - Test cache SCAN_NEVER
 --FILE--
 <?php
 require __DIR__ . '/../autoloadManager.php';
 
-$autoloadManager = new autoloadManager(__DIR__ . '/testcache.php', autoloadManager::REGEN_NEVER);
+$autoloadManager = new autoloadManager(__DIR__ . '/testcache.php', autoloadManager::SCAN_NEVER);
 $autoloadManager->register();
 
 $a = new A;

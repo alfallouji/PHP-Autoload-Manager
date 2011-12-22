@@ -58,10 +58,10 @@ class autoloadManager
     const CLASS_EXISTS    = 1;
     const CLASS_IS_NULL   = 2;
 
-    const REGEN_NEVER           = 0; // 0b000
-    const REGEN_ONCE            = 1; // 0b001
-    const REGEN_ALWAYS          = 3; // 0b011
-    const REGEN_CACHE_NOT_FOUND = 4; // 0b100
+    const SCAN_NEVER   = 0; // 0b000
+    const SCAN_ONCE    = 1; // 0b001
+    const SCAN_ALWAYS  = 3; // 0b011
+    const SCAN_CACHE   = 4; // 0b100
 
     /**
      * Folders that should be parsed
@@ -97,7 +97,7 @@ class autoloadManager
      * Regeneration options
      * @var Integer (options)
      */
-    private $_regenOptions = self::REGEN_ONCE;
+    private $_regenOptions = self::SCAN_ONCE;
 
     /**
      * Constructor
@@ -106,7 +106,7 @@ class autoloadManager
      * @param int    $regenOptions Regeneration options
      * @return void
      */
-    public function __construct($saveFile = null, $regenOptions = self::REGEN_ONCE)
+    public function __construct($saveFile = null, $regenOptions = self::SCAN_ONCE)
     {
         $this->setSaveFile($saveFile);
         $this->setRegenOptions($regenOptions);
@@ -222,7 +222,7 @@ class autoloadManager
     {
         // check if the class already exists in the cache file
         $loaded = $this->checkClass($className, $this->_classes);
-        if (!$loaded && (self::REGEN_ONCE & $this->_regenOptions))
+        if (!$loaded && (self::SCAN_ONCE & $this->_regenOptions))
         {
             // parse the folders returns the list of all the classes
             // in the application
@@ -230,7 +230,7 @@ class autoloadManager
 
             // recheck if the class exists again in the reloaded classes
             $loaded = $this->checkClass($className, $this->_classes);
-            if (!$loaded && (self::REGEN_CACHE_NOT_FOUND & $this->_regenOptions))
+            if (!$loaded && (self::SCAN_CACHE & $this->_regenOptions))
             {
                 // set it to null to flag that it was not found
                 // This behaviour fixes the problem with infinite
@@ -248,7 +248,7 @@ class autoloadManager
             // Regenerate just once per call
             if (!($this->_regenOptions & 2))
             {
-                $this->_regenOptions = $this->_regenOptions & ~ self::REGEN_ONCE;
+                $this->_regenOptions = $this->_regenOptions & ~ self::SCAN_ONCE;
             }
         }
     }
