@@ -58,6 +58,10 @@ class autoloadManager
     const CLASS_EXISTS    = 1;
     const CLASS_IS_NULL   = 2;
 
+    /**
+     * Constants used for the scan options
+     * @var int
+     */
     const SCAN_NEVER   = 0; // 0b000
     const SCAN_ONCE    = 1; // 0b001
     const SCAN_ALWAYS  = 3; // 0b011
@@ -94,22 +98,22 @@ class autoloadManager
     private $_saveFile = null;
 
     /**
-     * Regeneration options
+     * Scan options
      * @var Integer (options)
      */
-    private $_regenOptions = self::SCAN_ONCE;
+    private $_scanOptions = self::SCAN_ONCE;
 
     /**
      * Constructor
      *
-     * @param string $saveFile     Path where autoload files will be saved
-     * @param int    $regenOptions Regeneration options
+     * @param string $saveFile    Path where autoload files will be saved
+     * @param int    $scanOptions Scan options
      * @return void
      */
-    public function __construct($saveFile = null, $regenOptions = self::SCAN_ONCE)
+    public function __construct($saveFile = null, $scanOptions = self::SCAN_ONCE)
     {
         $this->setSaveFile($saveFile);
-        $this->setRegenOptions($regenOptions);
+        $this->setScanOptions($scanOptions);
     }
 
     /**
@@ -192,24 +196,24 @@ class autoloadManager
     }
 
     /**
-     * Set the regeneration options
+     * Set the scan options
      *
-     * @param  int $options Regeneration options.
+     * @param  int $options scan options.
      * @return void
      */
-    public function setRegenOptions($options)
+    public function setScanOptions($options)
     {
-        $this->_regenOptions = $options;
+        $this->_scanOptions = $options;
     }
 
     /**
-     * Get the regeneration options.
+     * Get the scan options.
      *
      * @return int
      */
-    public function getRegenOptions()
+    public function getScanOptions()
     {
-        return $this->_regenOptions;
+        return $this->_scanOptions;
     }
 
     /**
@@ -222,7 +226,7 @@ class autoloadManager
     {
         // check if the class already exists in the cache file
         $loaded = $this->checkClass($className, $this->_classes);
-        if (!$loaded && (self::SCAN_ONCE & $this->_regenOptions))
+        if (!$loaded && (self::SCAN_ONCE & $this->_scanOptions))
         {
             // parse the folders returns the list of all the classes
             // in the application
@@ -230,7 +234,7 @@ class autoloadManager
 
             // recheck if the class exists again in the reloaded classes
             $loaded = $this->checkClass($className, $this->_classes);
-            if (!$loaded && (self::SCAN_CACHE & $this->_regenOptions))
+            if (!$loaded && (self::SCAN_CACHE & $this->_scanOptions))
             {
                 // set it to null to flag that it was not found
                 // This behaviour fixes the problem with infinite
@@ -245,10 +249,10 @@ class autoloadManager
                 $this->saveToFile($this->_classes);
             }
 
-            // Regenerate just once per call
-            if (!($this->_regenOptions & 2))
+            // scan just once per call
+            if (!($this->_scanOptions & 2))
             {
-                $this->_regenOptions = $this->_regenOptions & ~ self::SCAN_ONCE;
+                $this->_scanOptions = $this->_scanOptions & ~ self::SCAN_ONCE;
             }
         }
     }
