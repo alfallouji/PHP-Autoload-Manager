@@ -17,7 +17,8 @@
 /**
  * File:        autoloadManager.php
  *
- * @author      Al-Fallouji Bashar & Charron Pierrick
+ * @author      Al-Fallouji Bashar 
+ * @author      Charron Pierrick
  * @version     2.0
  */
 
