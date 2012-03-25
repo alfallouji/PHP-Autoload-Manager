@@ -270,19 +270,14 @@ class autoloadManager
      */
     private function checkClass($className, array $classes)
     {
-        if (array_key_exists($className, $classes))
+        if (isset($classes[$className]))
         {
-            $classPath = $classes[$className];
-            // return true if the
-            if (null === $classPath)
-            {
-                return self::CLASS_IS_NULL;
-            }
-            elseif (file_exists($classPath))
-            {
-                require($classes[$className]);
-                return self::CLASS_EXISTS;
-            }
+            require $classes[$className];
+            return self::CLASS_EXISTS;
+        }
+        elseif (array_key_exists($className, $classes))
+        {
+            return self::CLASS_IS_NULL;
         }
         return self::CLASS_NOT_FOUND;
     }
