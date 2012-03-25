@@ -17,7 +17,7 @@
 /**
  * File:        autoloadManager.php
  *
- * @author      Al-Fallouji Bashar 
+ * @author      Al-Fallouji Bashar
  * @author      Charron Pierrick
  * @version     2.0
  */
@@ -224,6 +224,7 @@ class autoloadManager
      */
     public function loadClass($className)
     {
+        $className = strtolower($className);
         // check if the class already exists in the cache file
         $loaded = $this->checkClass($className, $this->_classes);
         if (!$loaded && (self::SCAN_ONCE & $this->_scanOptions))
@@ -369,11 +370,11 @@ class autoloadManager
                     $i+=2;
                     if ($namespace)
                     {
-                        $classes[] = $namespace . '\\' . $tokens[$i][1];
+                        $classes[] = strtolower($namespace . '\\' . $tokens[$i][1]);
                     }
                     else
                     {
-                        $classes[] = $tokens[$i][1];
+                        $classes[] = strtolower($tokens[$i][1]);
                     }
                     break;
             }
