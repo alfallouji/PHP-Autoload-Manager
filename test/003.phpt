@@ -17,9 +17,9 @@ unlink(__DIR__ . '/cache.php');
 ?>
 --EXPECTF--
 array(2) {
-  ["B"]=>
+  ["b"]=>
   string(%d) "%s/src/b.php"
-  ["A"]=>
+  ["a"]=>
   string(%d) "%s/src/a.php"
 }
 
