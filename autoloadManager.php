@@ -149,6 +149,28 @@ class autoloadManager
     {
         $this->_filesRegex = $regex;
     }
+    
+    /**
+     * Set the file extensions
+     *
+     * Another method to set up the $_filesRegex
+     * 
+     * @param string|array allowed extension string or array with extension strings
+     * @return void
+     */
+    public function setAllowedFileExtensions($extensions)
+    {
+        $regex = '/\.';
+        if (is_array($extensions))
+        {
+            $regex .= '(' . implode('|', $extensions) . ')';
+        }
+        else {
+            $regex .= $extensions;
+        }
+        
+        private $_filesRegex = $regex . '$/';
+    }
 
     /**
      * Add a new folder to parse
