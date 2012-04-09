@@ -169,7 +169,7 @@ class autoloadManager
             $regex .= $extensions;
         }
         
-        private $_filesRegex = $regex . '$/';
+        $this->_filesRegex = $regex . '$/';
     }
 
     /**
