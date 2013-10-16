@@ -269,6 +269,19 @@ class autoloadManager
     }
 
     /**
+     * @return bool TRUE if the current function has been directly or indirectly called by class_exists(), FALSE otherwise
+     */
+    protected function calledByClassExists()
+    {
+        $backtrace = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS);
+        foreach ($backtrace as $call)
+            if ($call['function'] == 'class_exists')
+                return TRUE;
+
+        return FALSE;
+    }
+
+    /**
      * Method used by the spl_autoload_register
      *
      * @param string $className Name of the class
@@ -280,7 +293,7 @@ class autoloadManager
         $className = strtolower($className);
         // check if the class already exists in the cache file
         $loaded = $this->checkClass($className, $this->_classes);
-        if (!$loaded && (self::SCAN_ONCE & $this->_scanOptions))
+        if (!$loaded && (self::SCAN_ONCE & $this->_scanOptions) && ! $this->calledByClassExists())
         {
             // parse the folders returns the list of all the classes
             // in the application
@@ -328,8 +341,11 @@ class autoloadManager
     {
         if (isset($classes[$className]))
         {
-            require $classes[$className];
-            return self::CLASS_EXISTS;
+            @include_once $classes[$className];
+            if (class_exists($className, FALSE))
+                return self::CLASS_EXISTS;
+            else
+                return self::CLASS_NOT_FOUND;
         }
         elseif (array_key_exists($className, $classes))
         {
