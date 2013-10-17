@@ -104,6 +104,12 @@ class autoloadManager
     private $_scanOptions = self::SCAN_ONCE;
 
     /**
+     * Any errors that occurred
+     * @var string[]
+     */
+    private $_errors = Array();
+
+    /**
      * Constructor
      *
      * @param string $saveFile    Path where autoload files will be saved
@@ -239,10 +245,35 @@ class autoloadManager
     }
 
     /**
+     * @return string[]
+     */
+    public function getErrors()
+    {
+        return $this->_errors;
+    }
+
+    /**
+     * @return boolean
+     */
+    public function hasErrors()
+    {
+        return (count($this->_errors) != 0);
+    }
+
+    /**
+     * @param string $error
+     */
+    protected function addError($error)
+    {
+        $this->_errors[] = $error;
+    }
+
+    /**
      * Method used by the spl_autoload_register
      *
      * @param string $className Name of the class
      * @return void
+     * @throws Exception
      */
     public function loadClass($className)
     {
@@ -269,7 +300,10 @@ class autoloadManager
             // write to a single file
             if ($this->getSaveFile())
             {
-                $this->saveToFile($this->_classes);
+                if ($this->hasErrors() == false)
+                    $this->saveToFile($this->_classes);
+                else
+                    throw new Exception("Errors encountered during autoload: " . join("\n", $this->getErrors()));
             }
 
             // scan just once per call
@@ -315,7 +349,15 @@ class autoloadManager
         $classesArray = array();
         foreach ($this->_folders as $folder)
         {
-            $classesArray = array_merge($classesArray, $this->parseFolder($folder));
+            $classesInFolder = $this->parseFolder($folder);
+            foreach ($classesInFolder as $className => $classPath)
+                if (array_key_exists($className, $classesArray))
+                {
+                    $this->addError(
+                        "Class {$className} is specified at least twice: "
+                        . "in '{$classesArray[$className]}' and '{$classesInFolder[$className]}'");
+                }
+            $classesArray = array_merge($classesArray, $classesInFolder);
         }
         return $classesArray;
     }
@@ -349,6 +391,12 @@ class autoloadManager
                     foreach ($classNames as $className)
                     {
                         // Adding class to map
+                        if (array_key_exists($className, $classes) AND $file->getPathname() != $classes[$className])
+                        {
+                            $this->addError(
+                                "Class {$className} is specified at least twice: "
+                                . "in '{$file->getPathname()}' and '{$classes[$className]}'");
+                        }
                         $classes[$className] = $file->getPathname();
                     }
                 }
@@ -463,15 +511,20 @@ class autoloadManager
     /**
      * Generate the autoload file
      *
-     * @return void
+     * @return boolean true if the autoload file was successfully generated and saved
      */
     public function generate()
     {
         if ($this->getSaveFile())
         {
             $this->refresh();
-            $this->saveToFile($this->_classes);
+            if ($this->hasErrors() == false)
+                $this->saveToFile($this->_classes);
+
+            return ($this->hasErrors() == false);
         }
+
+        return false;
     }
 
     /**
