@@ -155,12 +155,12 @@ class autoloadManager
     {
         $this->_filesRegex = $regex;
     }
-    
+
     /**
      * Set the file extensions
      *
      * Another method to set up the $_filesRegex
-     * 
+     *
      * @param string|array allowed extension string or array with extension strings
      * @return void
      */
@@ -174,7 +174,7 @@ class autoloadManager
         else {
             $regex .= $extensions;
         }
-        
+
         $this->_filesRegex = $regex . '$/';
     }
 
@@ -471,7 +471,7 @@ class autoloadManager
 
         // Export array
         $content .= 'return ' . var_export($classes, true) . ';';
-        file_put_contents($this->getSaveFile(), $content);
+        $this->fileWrite($this->getSaveFile(), $content);
     }
 
     /**
@@ -556,5 +556,49 @@ class autoloadManager
     public function unregister()
     {
         spl_autoload_unregister(array($this, 'loadClass'));
+    }
+
+    /**
+     * Similar to file_put_contents(), but this function is easier to use,
+     * because it creates missing directories along the way, so you don't
+     * have to care about that. Just pass in a full file path and that's it.
+     *
+     * Also, does not support all parameters of file_put_contents(), only the
+     * first 3 : string $filename , mixed $data, int $flags = 0
+     *
+     * Also, updates file (and any newly created directories) permissions to 777
+     * @param string $filename Path to the file where to write the data
+     * @param string $data The data to write. Can be either a string, an array or a stream resource
+     * @param int $flags Flags to pass to file_put_contents()
+     * @return int|boolean The number of bytes that were written to the file, or FALSE on failure
+     */
+    protected function fileWrite($filename, $data, $flags = 0)
+    {
+        $filename = str_replace('\\', '/', $filename);
+        $path = explode("/", $filename);
+        array_pop($path);
+
+        $path_so_far = '';
+        if (isset($path[0]) AND $path[0] == '')
+        {
+            array_shift($path);
+            $path_so_far .= "/";
+        }
+
+        foreach ($path as $v) {
+            $path_so_far .= $v;
+            if (! file_exists($path_so_far))
+            {
+                mkdir($path_so_far);
+                chmod($path_so_far, 0777);
+            }
+            $path_so_far .= "/";
+        }
+
+        $r = file_put_contents($filename, $data, $flags);
+        if ($r !== FALSE)
+            chmod($filename, 0777);
+
+        return $r;
     }
 }
