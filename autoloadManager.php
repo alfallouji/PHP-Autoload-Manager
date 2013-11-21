@@ -342,7 +342,7 @@ class autoloadManager
         if (isset($classes[$className]))
         {
             @include_once $classes[$className];
-            if (class_exists($className, FALSE))
+            if (class_exists($className, FALSE) OR interface_exists($className, FALSE))
                 return self::CLASS_EXISTS;
             else
                 return self::CLASS_NOT_FOUND;
