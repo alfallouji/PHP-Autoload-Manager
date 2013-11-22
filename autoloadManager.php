@@ -282,6 +282,59 @@ class autoloadManager
     }
 
     /**
+     * If this is the autoloader that is run last in the spl_autoload chain - simply returns TRUE.
+     * If this is not the autoloader that is run last - makes sure it is and returns FALSE.
+     * In this case during this autoload call the autoloaders that went after this one will be run manually
+     * and then our autoloader can just continue as the last one, but it must check if the class to be loaded
+     * was not autoloaded by any of those other autoloaders.
+     * During the next autoload call - our autoloader should be run last.
+     * @param string $className The name of the class or interface that is being autoloaded
+     * @return bool
+     */
+    protected function makeSureThisIsLastAutoloader($className)
+    {
+        $autoloaders = spl_autoload_functions();
+        $lastAutoloader = end($autoloaders);
+        if (FALSE == $this->isThisAutoloader($lastAutoloader))
+        {
+            $ourAutoloaderIndex = $this->getOurAutoloaderIndex();
+            $remainingAutoloaders = array_slice($autoloaders, $ourAutoloaderIndex + 1);
+
+            // Move our autoloader to be the last one
+            $this->unregister();
+            $this->register();
+
+            // After moving our autoloader - the rest of the autoloaders that went after this one will no longer
+            // be run, so we run them manually
+            foreach ($remainingAutoloaders as $loader) {
+                call_user_func($loader, $className);
+            }
+
+            return FALSE;
+        }
+
+        return TRUE;
+    }
+
+    protected function getOurAutoloaderIndex()
+    {
+        $autoloaders = spl_autoload_functions();
+        foreach ($autoloaders as $loaderIndex => $loader)
+            if ($this->isThisAutoloader($loader))
+                return $loaderIndex;
+    }
+
+    /**
+     * @param $autoloader
+     * @return bool TRUE if the provided $autoloader function belongs to PHP-Autoload-Manager
+     */
+    protected function isThisAutoloader($autoloader)
+    {
+        return (is_array($autoloader) AND count($autoloader) == 2
+            AND $autoloader[0] === $this AND $autoloader[1] == 'loadClass');
+    }
+
+    /**
      * Method used by the spl_autoload_register
      *
      * @param string $className Name of the class
@@ -289,10 +342,22 @@ class autoloadManager
      * @throws Exception
      */
     public function loadClass($className)
-    {
+    {;
+        // Make sure this autoloader is run last. This is important, because if there are additional autoloaders
+        // afterwards that load other classes (that are not loadable via this autoloader) - then it will force this
+        // autoloader to regenerate its autoload data file, which can result in poor performance on Windows
+        $wasLastAutoloader = $this->makeSureThisIsLastAutoloader($className);
+
+        // If our autoloader was moved then some other autoloaders have been called by makeSureThisIsLastAutoloader(),
+        // so we must manually check if this class was not loaded by any of them, before continuing
+        if ($wasLastAutoloader === FALSE AND (class_exists($className, FALSE) OR interface_exists($className, FALSE))) {
+            return;
+        }
+
         $className = strtolower($className);
         // check if the class already exists in the cache file
         $loaded = $this->checkClass($className, $this->_classes);
+
         if (!$loaded && (self::SCAN_ONCE & $this->_scanOptions) && ! $this->calledByClassExists())
         {
             // parse the folders returns the list of all the classes
