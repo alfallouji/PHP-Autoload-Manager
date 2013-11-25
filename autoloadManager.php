@@ -308,6 +308,8 @@ class autoloadManager
             // be run, so we run them manually
             foreach ($remainingAutoloaders as $loader) {
                 call_user_func($loader, $className);
+                if (class_exists($className, FALSE) OR interface_exists($className, FALSE))
+                    break;
             }
 
             return FALSE;
