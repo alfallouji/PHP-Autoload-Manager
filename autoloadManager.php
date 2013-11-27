@@ -344,7 +344,7 @@ class autoloadManager
      * @throws Exception
      */
     public function loadClass($className)
-    {;
+    {
         // Make sure this autoloader is run last. This is important, because if there are additional autoloaders
         // afterwards that load other classes (that are not loadable via this autoloader) - then it will force this
         // autoloader to regenerate its autoload data file, which can result in poor performance on Windows
