@@ -26,8 +26,8 @@
 if (!defined('T_NAMESPACE'))
 {
     /**
-     * This is just for backword compatibilty with previous versions
-     * Token -1 will never exists but we just want to avoid having undefined
+     * This is just for backwards compatibility with previous versions
+     * Token -1 will never exist but we just want to avoid having undefined
      * constant
      */
     define('T_NAMESPACE', -1);
@@ -114,7 +114,6 @@ class autoloadManager
      *
      * @param string $saveFile    Path where autoload files will be saved
      * @param int    $scanOptions Scan options
-     * @return void
      */
     public function __construct($saveFile = null, $scanOptions = self::SCAN_ONCE)
     {
@@ -135,7 +134,7 @@ class autoloadManager
     /**
      * Set the path where autoload files are saved
      *
-     * @param string $path path where autoload files will be saved
+     * @param string $pathToFile path where autoload files will be saved
      */
     public function setSaveFile($pathToFile)
     {
@@ -182,6 +181,7 @@ class autoloadManager
      * Add a new folder to parse
      *
      * @param string $path Root path to process
+     * @throws Exception
      */
     public function addFolder($path)
     {
@@ -199,6 +199,7 @@ class autoloadManager
      * Exclude a folder from the parsing
      *
      * @param string $path Folder to exclude
+     * @throws Exception
      */
     public function excludeFolder($path)
     {
@@ -423,7 +424,7 @@ class autoloadManager
 
 
     /**
-     * Parse every registred folders, regenerate autoload files and update the $_classes
+     * Parse every registered folders, regenerate autoload files and update the $_classes
      *
      * @return array Array containing all the classes found
      */
@@ -536,7 +537,6 @@ class autoloadManager
      * File is generated under the _savePath folder.
      *
      * @param array  $classes Contains all the classes found and the corresponding filename (e.g. {$className} => {fileName})
-     * @param string $folder Folder to process
      * @return void
      */
     private function saveToFile(array $classes)
@@ -571,7 +571,7 @@ class autoloadManager
      * Refreshes an already generated cache file
      * This solves problems with previously unexistant classes that
      * have been made available after.
-     * The optimize functionnality will look at all null values of
+     * The optimize functionality will look at all null values of
      * the available classes and does a new parse. if it founds that
      * there are classes that has been made available, it will update
      * the file.
