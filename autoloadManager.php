@@ -309,7 +309,7 @@ class autoloadManager
             // be run, so we run them manually
             foreach ($remainingAutoloaders as $loader) {
                 call_user_func($loader, $className);
-                if (class_exists($className, FALSE) OR interface_exists($className, FALSE))
+                if ($this->classLoaded($className))
                     break;
             }
 
@@ -353,7 +353,7 @@ class autoloadManager
 
         // If our autoloader was moved then some other autoloaders have been called by makeSureThisIsLastAutoloader(),
         // so we must manually check if this class was not loaded by any of them, before continuing
-        if ($wasLastAutoloader === FALSE AND (class_exists($className, FALSE) OR interface_exists($className, FALSE))) {
+        if ($wasLastAutoloader === FALSE AND $this->classLoaded($className)) {
             return;
         }
 
@@ -410,7 +410,7 @@ class autoloadManager
         if (isset($classes[$className]))
         {
             @include_once $classes[$className];
-            if (class_exists($className, FALSE) OR interface_exists($className, FALSE))
+            if ($this->classLoaded($className))
                 return self::CLASS_EXISTS;
             else
                 return self::CLASS_NOT_FOUND;
@@ -420,6 +420,17 @@ class autoloadManager
             return self::CLASS_IS_NULL;
         }
         return self::CLASS_NOT_FOUND;
+    }
+
+    /**
+     * Checks if an entity that is loadable by PHP-Autoload-Manager was already included during this request
+     * @param $className
+     * @return bool
+     */
+    private function classLoaded($className)
+    {
+        return class_exists($className, FALSE) OR interface_exists($className, FALSE)
+            OR trait_exists($className, FALSE);
     }
 
 
