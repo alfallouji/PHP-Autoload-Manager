@@ -375,6 +375,7 @@ class autoloadManager
             switch ($tokens[$i][0])
             {
                 case T_NAMESPACE:
+                    $namespace = null;
                     $i+=2;
                     while ($tokens[$i][0] === T_STRING || $tokens[$i][0] === T_NS_SEPARATOR)
                     {
