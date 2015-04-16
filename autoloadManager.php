@@ -385,6 +385,11 @@ class autoloadManager
                 case T_INTERFACE:
                 case T_CLASS:
                 case T_TRAIT:
+                    if(($tokens[$i][0] === T_CLASS) && $tokens[$i-1][0] === T_DOUBLE_COLON) 
+                    {
+                        continue(2);
+                    }
+
                     $i+=2;
                     if ($namespace)
                     {
