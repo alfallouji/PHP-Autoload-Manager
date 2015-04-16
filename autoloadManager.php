@@ -26,8 +26,8 @@
 if (!defined('T_NAMESPACE'))
 {
     /**
-     * This is just for backword compatibilty with previous versions
-     * Token -1 will never exists but we just want to avoid having undefined
+     * This is just for backwards compatibility with previous versions
+     * Token -1 will never exist but we just want to avoid having undefined
      * constant
      */
     define('T_NAMESPACE', -1);
@@ -104,11 +104,16 @@ class autoloadManager
     private $_scanOptions = self::SCAN_ONCE;
 
     /**
+     * Any errors that occurred
+     * @var string[]
+     */
+    private $_errors = Array();
+
+    /**
      * Constructor
      *
      * @param string $saveFile    Path where autoload files will be saved
      * @param int    $scanOptions Scan options
-     * @return void
      */
     public function __construct($saveFile = null, $scanOptions = self::SCAN_ONCE)
     {
@@ -129,7 +134,7 @@ class autoloadManager
     /**
      * Set the path where autoload files are saved
      *
-     * @param string $path path where autoload files will be saved
+     * @param string $pathToFile path where autoload files will be saved
      */
     public function setSaveFile($pathToFile)
     {
@@ -149,12 +154,12 @@ class autoloadManager
     {
         $this->_filesRegex = $regex;
     }
-    
+
     /**
      * Set the file extensions
      *
      * Another method to set up the $_filesRegex
-     * 
+     *
      * @param string|array allowed extension string or array with extension strings
      * @return void
      */
@@ -168,7 +173,7 @@ class autoloadManager
         else {
             $regex .= $extensions;
         }
-        
+
         $this->_filesRegex = $regex . '$/';
     }
 
@@ -176,6 +181,7 @@ class autoloadManager
      * Add a new folder to parse
      *
      * @param string $path Root path to process
+     * @throws Exception
      */
     public function addFolder($path)
     {
@@ -193,6 +199,7 @@ class autoloadManager
      * Exclude a folder from the parsing
      *
      * @param string $path Folder to exclude
+     * @throws Exception
      */
     public function excludeFolder($path)
     {
@@ -239,17 +246,122 @@ class autoloadManager
     }
 
     /**
+     * @return string[]
+     */
+    public function getErrors()
+    {
+        return $this->_errors;
+    }
+
+    /**
+     * @return boolean
+     */
+    public function hasErrors()
+    {
+        return (count($this->_errors) != 0);
+    }
+
+    /**
+     * @param string $error
+     */
+    protected function addError($error)
+    {
+        $this->_errors[] = $error;
+    }
+
+    /**
+     * @return bool TRUE if the current function has been directly or indirectly called by class_exists(), FALSE otherwise
+     */
+    protected function calledByClassExists()
+    {
+        $backtrace = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS);
+        foreach ($backtrace as $call)
+            if ($call['function'] == 'class_exists')
+                return TRUE;
+
+        return FALSE;
+    }
+
+    /**
+     * If this is the autoloader that is run last in the spl_autoload chain - simply returns TRUE.
+     * If this is not the autoloader that is run last - makes sure it is and returns FALSE.
+     * In this case during this autoload call the autoloaders that went after this one will be run manually
+     * and then our autoloader can just continue as the last one, but it must check if the class to be loaded
+     * was not autoloaded by any of those other autoloaders.
+     * During the next autoload call - our autoloader should be run last.
+     * @param string $className The name of the class or interface that is being autoloaded
+     * @return bool
+     */
+    protected function makeSureThisIsLastAutoloader($className)
+    {
+        $autoloaders = spl_autoload_functions();
+        $lastAutoloader = end($autoloaders);
+        if (FALSE == $this->isThisAutoloader($lastAutoloader))
+        {
+            $ourAutoloaderIndex = $this->getOurAutoloaderIndex();
+            $remainingAutoloaders = array_slice($autoloaders, $ourAutoloaderIndex + 1);
+
+            // Move our autoloader to be the last one
+            $this->unregister();
+            $this->register();
+
+            // After moving our autoloader - the rest of the autoloaders that went after this one will no longer
+            // be run, so we run them manually
+            foreach ($remainingAutoloaders as $loader) {
+                call_user_func($loader, $className);
+                if ($this->classLoaded($className))
+                    break;
+            }
+
+            return FALSE;
+        }
+
+        return TRUE;
+    }
+
+    protected function getOurAutoloaderIndex()
+    {
+        $autoloaders = spl_autoload_functions();
+        foreach ($autoloaders as $loaderIndex => $loader)
+            if ($this->isThisAutoloader($loader))
+                return $loaderIndex;
+    }
+
+    /**
+     * @param $autoloader
+     * @return bool TRUE if the provided $autoloader function belongs to PHP-Autoload-Manager
+     */
+    protected function isThisAutoloader($autoloader)
+    {
+        return (is_array($autoloader) AND count($autoloader) == 2
+            AND $autoloader[0] === $this AND $autoloader[1] == 'loadClass');
+    }
+
+    /**
      * Method used by the spl_autoload_register
      *
      * @param string $className Name of the class
      * @return void
+     * @throws Exception
      */
     public function loadClass($className)
     {
+        // Make sure this autoloader is run last. This is important, because if there are additional autoloaders
+        // afterwards that load other classes (that are not loadable via this autoloader) - then it will force this
+        // autoloader to regenerate its autoload data file, which can result in poor performance on Windows
+        $wasLastAutoloader = $this->makeSureThisIsLastAutoloader($className);
+
+        // If our autoloader was moved then some other autoloaders have been called by makeSureThisIsLastAutoloader(),
+        // so we must manually check if this class was not loaded by any of them, before continuing
+        if ($wasLastAutoloader === FALSE AND $this->classLoaded($className)) {
+            return;
+        }
+
         $className = strtolower($className);
         // check if the class already exists in the cache file
         $loaded = $this->checkClass($className, $this->_classes);
-        if (!$loaded && (self::SCAN_ONCE & $this->_scanOptions))
+
+        if (!$loaded && (self::SCAN_ONCE & $this->_scanOptions) && ! $this->calledByClassExists())
         {
             // parse the folders returns the list of all the classes
             // in the application
@@ -269,7 +381,10 @@ class autoloadManager
             // write to a single file
             if ($this->getSaveFile())
             {
-                $this->saveToFile($this->_classes);
+                if ($this->hasErrors() == false)
+                    $this->saveToFile($this->_classes);
+                else
+                    throw new Exception("Errors encountered during autoload: " . join("\n", $this->getErrors()));
             }
 
             // scan just once per call
@@ -294,8 +409,11 @@ class autoloadManager
     {
         if (isset($classes[$className]))
         {
-            require $classes[$className];
-            return self::CLASS_EXISTS;
+            @include_once $classes[$className];
+            if ($this->classLoaded($className))
+                return self::CLASS_EXISTS;
+            else
+                return self::CLASS_NOT_FOUND;
         }
         elseif (array_key_exists($className, $classes))
         {
@@ -304,9 +422,20 @@ class autoloadManager
         return self::CLASS_NOT_FOUND;
     }
 
+    /**
+     * Checks if an entity that is loadable by PHP-Autoload-Manager was already included during this request
+     * @param $className
+     * @return bool
+     */
+    private function classLoaded($className)
+    {
+        return class_exists($className, FALSE) OR interface_exists($className, FALSE)
+            OR trait_exists($className, FALSE);
+    }
+
 
     /**
-     * Parse every registred folders, regenerate autoload files and update the $_classes
+     * Parse every registered folders, regenerate autoload files and update the $_classes
      *
      * @return array Array containing all the classes found
      */
@@ -315,7 +444,15 @@ class autoloadManager
         $classesArray = array();
         foreach ($this->_folders as $folder)
         {
-            $classesArray = array_merge($classesArray, $this->parseFolder($folder));
+            $classesInFolder = $this->parseFolder($folder);
+            foreach ($classesInFolder as $className => $classPath)
+                if (array_key_exists($className, $classesArray))
+                {
+                    $this->addError(
+                        "Class {$className} is specified at least twice: "
+                        . "in '{$classesArray[$className]}' and '{$classesInFolder[$className]}'");
+                }
+            $classesArray = array_merge($classesArray, $classesInFolder);
         }
         return $classesArray;
     }
@@ -349,6 +486,12 @@ class autoloadManager
                     foreach ($classNames as $className)
                     {
                         // Adding class to map
+                        if (array_key_exists($className, $classes) AND $file->getPathname() != $classes[$className])
+                        {
+                            $this->addError(
+                                "Class {$className} is specified at least twice: "
+                                . "in '{$file->getPathname()}' and '{$classes[$className]}'");
+                        }
                         $classes[$className] = $file->getPathname();
                     }
                 }
@@ -411,7 +554,6 @@ class autoloadManager
      * File is generated under the _savePath folder.
      *
      * @param array  $classes Contains all the classes found and the corresponding filename (e.g. {$className} => {fileName})
-     * @param string $folder Folder to process
      * @return void
      */
     private function saveToFile(array $classes)
@@ -429,7 +571,7 @@ class autoloadManager
 
         // Export array
         $content .= 'return ' . var_export($classes, true) . ';';
-        file_put_contents($this->getSaveFile(), $content);
+        $this->fileWrite($this->getSaveFile(), $content);
     }
 
     /**
@@ -446,7 +588,7 @@ class autoloadManager
      * Refreshes an already generated cache file
      * This solves problems with previously unexistant classes that
      * have been made available after.
-     * The optimize functionnality will look at all null values of
+     * The optimize functionality will look at all null values of
      * the available classes and does a new parse. if it founds that
      * there are classes that has been made available, it will update
      * the file.
@@ -469,15 +611,20 @@ class autoloadManager
     /**
      * Generate the autoload file
      *
-     * @return void
+     * @return boolean true if the autoload file was successfully generated and saved
      */
     public function generate()
     {
         if ($this->getSaveFile())
         {
             $this->refresh();
-            $this->saveToFile($this->_classes);
+            if ($this->hasErrors() == false)
+                $this->saveToFile($this->_classes);
+
+            return ($this->hasErrors() == false);
         }
+
+        return false;
     }
 
     /**
@@ -509,5 +656,49 @@ class autoloadManager
     public function unregister()
     {
         spl_autoload_unregister(array($this, 'loadClass'));
+    }
+
+    /**
+     * Similar to file_put_contents(), but this function is easier to use,
+     * because it creates missing directories along the way, so you don't
+     * have to care about that. Just pass in a full file path and that's it.
+     *
+     * Also, does not support all parameters of file_put_contents(), only the
+     * first 3 : string $filename , mixed $data, int $flags = 0
+     *
+     * Also, updates file (and any newly created directories) permissions to 777
+     * @param string $filename Path to the file where to write the data
+     * @param string $data The data to write. Can be either a string, an array or a stream resource
+     * @param int $flags Flags to pass to file_put_contents()
+     * @return int|boolean The number of bytes that were written to the file, or FALSE on failure
+     */
+    protected function fileWrite($filename, $data, $flags = 0)
+    {
+        $filename = str_replace('\\', '/', $filename);
+        $path = explode("/", $filename);
+        array_pop($path);
+
+        $path_so_far = '';
+        if (isset($path[0]) AND $path[0] == '')
+        {
+            array_shift($path);
+            $path_so_far .= "/";
+        }
+
+        foreach ($path as $v) {
+            $path_so_far .= $v;
+            if (! file_exists($path_so_far))
+            {
+                mkdir($path_so_far);
+                chmod($path_so_far, 0777);
+            }
+            $path_so_far .= "/";
+        }
+
+        $r = file_put_contents($filename, $data, $flags);
+        if ($r !== FALSE)
+            chmod($filename, 0777);
+
+        return $r;
     }
 }
